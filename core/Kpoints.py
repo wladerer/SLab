@@ -10,4 +10,7 @@ def write_kpath(CONTCAR):
     kpts = Kpoints.automatic_linemode(divisions=40,ibz=kpath)
     kpts.write_file("KPOINTS_nsc")
 
-
+def write_KPOINTs(slab):
+    kpts = Kpoints.automatic_density_by_lengths(slab.structure)
+    kpoints = Kpoints.monkhorst_automatic(kpts, shift=(0.0, 0.0, 0.0))
+    kpoints.write_file("KPOINTS")
