@@ -1,16 +1,27 @@
-import bulk2slab as b2s
+from bulk2slab import Slab, Bulk, find_slabs
 from pymatgen.io.vasp import Poscar, Kpoints, Incar
 from pymatgen.symmetry.bandstructure import HighSymmKpath
 from pymatgen.electronic_structure.plotter import BSDOSPlotter, BSPlotter, DosPlotter
 from pymatgen.core import Lattice, Structure, Molecule
 
-def write_kpath(CONTCAR):
-    struct = Structure.from_file(CONTCAR)
+def writeKPATH(CONTCAR: str):
+    struct: Structure = Structure.from_file(CONTCAR)
     kpath = HighSymmKpath(struct)
     kpts = Kpoints.automatic_linemode(divisions=40,ibz=kpath)
     kpts.write_file("KPOINTS_nsc")
 
-def write_KPOINTs(slab):
-    kpts = Kpoints.automatic_density_by_lengths(slab.structure)
-    kpoints = Kpoints.monkhorst_automatic(kpts, shift=(0.0, 0.0, 0.0))
-    kpoints.write_file("KPOINTS")
+def makeKPOINTs(slab: Slab, density: list=[50,50,50], save=True): 
+    '''Writes KPOINT file to current directory
+    
+       Kpoints are assigned by length [x,y,z]/[a,b,c]
+    '''
+
+    kpts = Kpoints.automatic_density_by_lengths(slab.structure, density, force_gamma=True)
+    kpoints = kpts.as_dict()['kpoints'][0]
+    if save:
+        kpts.write_file("KPOINTS")
+
+    return f"{int(kpoints[0])}{int(kpoints[1])}{int(kpoints[2])}"
+
+
+
