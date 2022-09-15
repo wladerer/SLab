@@ -9,7 +9,22 @@ Utilities to work with slabs and add adsorbates
 A minimal example is shown below:
 
 ```
-Bi2Te3_CONTCAR = "/home/wladerer/github/minis/pymatgen_test/bulk_contcars/CONTCARs/Bi2Te3_CONTCAR.vasp"
-slab_data = bulk2slab(Bi2Te3_CONTCAR,(0,0,1), MIN_SLAB=3)
-Bi2Te3_slabs_H = addH(slab_data[0][0], plot=True)
+from bulk2slab import *
+
+#Specify the file that contains relaxed bulk
+Bi2Se3_contcar = "/home/wladerer/github/SLab/test/BULK_CONTCARS/Bi2Se3_CONTCAR.vasp" 
+
+#Create an instance of a Bulk object
+Bi2Se3_bulk = Bulk(Bi2Se3_contcar) 
+
+ # find all unique possible (001) slabs
+slabs = bulk2slab(Bi2Se3_bulk, (0, 0, 1), MIN_SLAB=2, MIN_VAC=2)
+
+#Save each slab if you'd like
+#Slab objects filenames are systematized
+for slab in slabs:
+    slab.saveSlab()
+
+#write KPOINTS file - Kpoints are assigned by length [x,y,z]/[a,b,c], default is [50,50,50]
+writeKpoints(slabs[0])
 ```
