@@ -5,7 +5,6 @@ from pymatgen.symmetry.bandstructure import HighSymmKpath
 from pymatgen.analysis.adsorption import plot_slab
 from pymatgen.analysis.adsorption import AdsorbateSiteFinder
 from matplotlib import pyplot as plt
-import functools
 
 
 class Bulk:
@@ -55,10 +54,15 @@ class Slab(Bulk):
                 ax.set_ylim(-5,5)
             plt.show()
 
+    
         return ads_structs
 
 def findSlabs(bulk, index: tuple, MIN_SLAB: int, MIN_VAC: int):
-         
+        '''
+        Returns valid slabs according to their symmetry and polarity
+
+        MIN_SLAB: this is the minimium slab size in multiples of the hkl planes
+        '''
         slabgen = SlabGenerator(bulk.structure, index, MIN_SLAB, MIN_VAC, primitive=False, in_unit_planes=True, reorient_lattice=True) #this will find all unique surfaces of the structure within the specified miller plane
         slabs: list = slabgen.get_slabs()
         valid_slabs: list = [slab for slab in slabs if (not slab.is_polar() and slab.is_symmetric())] #list comprehension that creates an array of valid slabs according to our criteria
@@ -68,6 +72,9 @@ def findSlabs(bulk, index: tuple, MIN_SLAB: int, MIN_VAC: int):
 
 
 def writeKpath(CONTCAR: str):
+    '''
+    Writes Kpath from CONTCAR in linemode according to unit cell type
+    '''
     struct: Structure = Structure.from_file(CONTCAR)
     kpath = HighSymmKpath(struct)
     kpts = Kpoints.automatic_linemode(divisions=40,ibz=kpath)
@@ -84,7 +91,7 @@ def makeKpoints(slab: Slab, density: list=[50,50,50], save=True):
     if save:
         kpts.write_file("KPOINTS")
 
-    return f"{int(kpoints[0])}x{int(kpoints[1])}x{int(kpoints[2])}"
+    return f"{int(kpoints[0]):.i}x{int(kpoints[1])}x{int(kpoints[2])}"
 
 def prepareSlabs(contcars: list[str], indices: list[tuple], min_slab: int=2, min_vac: int=2):
     '''
@@ -99,7 +106,7 @@ def prepareSlabs(contcars: list[str], indices: list[tuple], min_slab: int=2, min
                 slab_list.append(slab)
     
     return slab_list
-    
+
 
 def metaData(slab_list: list[Slab], filename: str="metadata", wKPOINTS: bool=False, mode: str='w'):
     '''Creates CSV with slab attributes
