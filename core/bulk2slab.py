@@ -20,12 +20,15 @@ class Slab(Bulk):
     def __init__(self, valid_slab, CONTCAR: str, index: tuple, MIN_SLAB: int, MIN_VAC: int):
         super().__init__(CONTCAR)
         self.structure: Structure = valid_slab
+        self.getParams(valid_slab)
+        self.plane = f"{str(index[0]) + str(index[1]) + str(index[2])}"
+        self.filename: str = f"{self.formula}_{self.plane}_POSCAR.vasp"
+
+    def getParams(self, valid_slab):
         self.length: float = valid_slab.as_dict()['lattice']['c']
         self.a: float = valid_slab.as_dict()['lattice']['a']
         self.b: float = valid_slab.as_dict()['lattice']['b']
         self.c: float = valid_slab.as_dict()['lattice']['c']
-        self.plane = f"{str(index[0]) + str(index[1]) + str(index[2])}"
-        self.filename: str = f"{self.formula}_{self.plane}_POSCAR.vasp"
     
     def __str__(self):
         return str(self.structure)
@@ -47,15 +50,18 @@ class Slab(Bulk):
             for n, ads_struct in enumerate(ads_structs):
                 ax = fig.add_subplot(1,len(ads_structs),n+1)
                 plot_slab(ads_struct, ax, adsorption_sites=False)
-                ax.set_title(n+1)
-                ax.set_xticks([])
-                ax.set_yticks([])
-                ax.set_xlim(-5, 5)
-                ax.set_ylim(-5,5)
+                self.configPlot(n, ax)
             plt.show()
 
     
         return ads_structs
+
+    def configPlot(self, n, ax):
+        ax.set_title(n+1)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlim(-5, 5)
+        ax.set_ylim(-5,5)
 
 def bulk2slab(bulk, index: tuple, MIN_SLAB: int, MIN_VAC: int):
         '''
@@ -65,10 +71,17 @@ def bulk2slab(bulk, index: tuple, MIN_SLAB: int, MIN_VAC: int):
         '''
         slabgen = SlabGenerator(bulk.structure, index, MIN_SLAB, MIN_VAC, primitive=False, in_unit_planes=True, reorient_lattice=True) #this will find all unique surfaces of the structure within the specified miller plane
         slabs: list = slabgen.get_slabs()
-        valid_slabs: list = [slab for slab in slabs if (not slab.is_polar() and slab.is_symmetric())] #list comprehension that creates an array of valid slabs according to our criteria
-        valid_slabs: list = [Slab(slab, bulk.CONTCAR, index, MIN_SLAB, MIN_VAC) for slab in valid_slabs]
+        valid_slabs = isValid(bulk, index, MIN_SLAB, MIN_VAC, slabs)
 
         return valid_slabs
+
+def isValid(bulk, index, MIN_SLAB, MIN_VAC, slabs):
+    '''
+    Helper function to check for symmetric, non-polar slabs
+    '''
+    valid_slabs: list = [slab for slab in slabs if (not slab.is_polar() and slab.is_symmetric())] #list comprehension that creates an array of valid slabs according to our criteria
+    valid_slabs: list = [Slab(slab, bulk.CONTCAR, index, MIN_SLAB, MIN_VAC) for slab in valid_slabs]
+    return valid_slabs
 
 
 def writeKpath(CONTCAR: str):
@@ -115,8 +128,7 @@ def metaData(slab_list: list[Slab], filename: str="metadata", wKPOINTS: bool=Fal
     '''
 
     with open(f"{filename}.csv", mode) as meta:
-        meta.write("Formula,index,a,b,c,kpoints")
-        meta.write('\n')
+        meta.write("Formula,index,a,b,c,kpoints\n")
 
         for slab in slab_list:
 
@@ -124,8 +136,8 @@ def metaData(slab_list: list[Slab], filename: str="metadata", wKPOINTS: bool=Fal
             if wKPOINTS:
                 kpoints = writeKpoints(slab)
             
-            meta.write(f"{slab.formula},{slab.plane},{slab.a:10.5f},{slab.b:10.5f},{slab.c:10.5f},{(kpoints or '')}")
-            meta.write('\n')
+            meta.write(f"{slab.formula},{slab.plane},{slab.a:10.5f},{slab.b:10.5f},{slab.c:10.5f},{(kpoints or '')},\n")
+
 
 def writePOTCAR(slab, potential_dir):
     import os
@@ -134,4 +146,3 @@ def writePOTCAR(slab, potential_dir):
     dir_strings = [f"{potential_dir}/PBE/{atom}" for atom in atom_list] 
 
 
-    
