@@ -57,7 +57,7 @@ class Slab(Bulk):
     
         return ads_structs
 
-def findSlabs(bulk, index: tuple, MIN_SLAB: int, MIN_VAC: int):
+def bulk2slab(bulk, index: tuple, MIN_SLAB: int, MIN_VAC: int):
         '''
         Returns valid slabs according to their symmetry and polarity
 
@@ -80,7 +80,7 @@ def writeKpath(CONTCAR: str):
     kpts = Kpoints.automatic_linemode(divisions=40,ibz=kpath)
     kpts.write_file("KPOINTS_nsc")
 
-def makeKpoints(slab: Slab, density: list=[50,50,50], save=True): 
+def writeKpoints(slab: Slab, density: list=[50,50,50], save=True): 
     '''Writes KPOINT file to current directory
     
        Kpoints are assigned by length [x,y,z]/[a,b,c]
@@ -91,7 +91,7 @@ def makeKpoints(slab: Slab, density: list=[50,50,50], save=True):
     if save:
         kpts.write_file("KPOINTS")
 
-    return f"{int(kpoints[0]):.i}x{int(kpoints[1])}x{int(kpoints[2])}"
+    return f"{int(kpoints[0])}x{int(kpoints[1])}x{int(kpoints[2])}"
 
 def prepareSlabs(contcars: list[str], indices: list[tuple], min_slab: int=2, min_vac: int=2):
     '''
@@ -102,7 +102,7 @@ def prepareSlabs(contcars: list[str], indices: list[tuple], min_slab: int=2, min
     slab_list = []
     for index in indices:
         for bulk in bulk_list:
-            for slab in findSlabs(bulk, index, min_slab, min_vac):
+            for slab in bulk2slab(bulk, index, min_slab, min_vac):
                 slab_list.append(slab)
     
     return slab_list
@@ -122,14 +122,16 @@ def metaData(slab_list: list[Slab], filename: str="metadata", wKPOINTS: bool=Fal
 
             kpoints = None
             if wKPOINTS:
-                kpoints = makeKpoints(slab)
+                kpoints = writeKpoints(slab)
             
             meta.write(f"{slab.formula},{slab.plane},{slab.a:10.5f},{slab.b:10.5f},{slab.c:10.5f},{(kpoints or '')}")
             meta.write('\n')
 
-
-
-
+def writePOTCAR(slab, potential_dir):
+    import os
+    atoms = slab.structure.symbol_set
+    atom_list = [str(atom) for atom in atoms]
+    dir_strings = [f"{potential_dir}/PBE/{atom}" for atom in atom_list] 
 
 
     
