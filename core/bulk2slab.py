@@ -139,10 +139,10 @@ def metaData(slab_list: list[Slab], filename: str="metadata", wKPOINTS: bool=Fal
             meta.write(f"{slab.formula},{slab.plane},{slab.a:10.5f},{slab.b:10.5f},{slab.c:10.5f},{(kpoints or '')},\n")
 
 
-def writePOTCAR(slab, potential_dir):
+def writePOTCAR(slab, potential_dir: str):
     import os
     atoms = slab.structure.symbol_set
-    atom_list = [str(atom) for atom in atoms]
-    dir_strings = [f"{potential_dir}/PBE/{atom}" for atom in atom_list] 
+    dir_strings = [f"{potential_dir}/PBE/{atom}" for atom in [str(atom) for atom in atoms]] 
+    
 
 
