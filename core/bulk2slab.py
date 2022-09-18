@@ -143,6 +143,4 @@ def writePOTCAR(slab, potential_dir: str):
     import os
     atoms = slab.structure.symbol_set
     dir_strings = [f"{potential_dir}/PBE/{atom}" for atom in [str(atom) for atom in atoms]] 
-    
-
 
