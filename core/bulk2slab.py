@@ -1,6 +1,7 @@
-from pymatgen.core import Lattice, Structure, Molecule
+from pymatgen.core import Structure, Molecule
+from pymatgen.core.composition import Composition
 from pymatgen.core.surface import SlabGenerator
-from pymatgen.io.vasp import Poscar, Kpoints, Incar
+from pymatgen.io.vasp import Poscar, Kpoints
 from pymatgen.symmetry.bandstructure import HighSymmKpath
 from pymatgen.analysis.adsorption import plot_slab
 from pymatgen.analysis.adsorption import AdsorbateSiteFinder
@@ -12,8 +13,15 @@ class Bulk:
     def __init__(self, CONTCAR: str):
             self.CONTCAR = CONTCAR
             self.structure: Structure = Structure.from_file(CONTCAR)
-            self.formula: str = ''.join(self.structure.formula.split())
+            self.formula = self.getreducedFormula()
 
+    def getreducedFormula(self):
+        '''Pymatgen does not have a simple way of getting a reduced formula from a Structure object'''
+        molecular_formula: str = ''.join(self.structure.formula.split())
+        reduced_formula, factor = Composition(molecular_formula).get_reduced_formula_and_factor()            
+
+        return reduced_formula
+        
 
 class Slab(Bulk):
 
@@ -69,7 +77,7 @@ def bulk2slab(bulk, index: tuple, MIN_SLAB: int, MIN_VAC: int):
 
         MIN_SLAB: this is the minimium slab size in multiples of the hkl planes
         '''
-        slabgen = SlabGenerator(bulk.structure, index, MIN_SLAB, MIN_VAC, primitive=False, in_unit_planes=True, reorient_lattice=True) #this will find all unique surfaces of the structure within the specified miller plane
+        slabgen = SlabGenerator(bulk.structure, index, MIN_SLAB, MIN_VAC, primitive=False, in_unit_planes=True) #this will find all unique surfaces of the structure within the specified miller plane
         slabs: list = slabgen.get_slabs()
         valid_slabs = isValid(bulk, index, MIN_SLAB, MIN_VAC, slabs)
 
@@ -82,29 +90,6 @@ def isValid(bulk, index, MIN_SLAB, MIN_VAC, slabs):
     valid_slabs: list = [slab for slab in slabs if (not slab.is_polar() and slab.is_symmetric())] #list comprehension that creates an array of valid slabs according to our criteria
     valid_slabs: list = [Slab(slab, bulk.CONTCAR, index, MIN_SLAB, MIN_VAC) for slab in valid_slabs]
     return valid_slabs
-
-
-def writeKpath(CONTCAR: str):
-    '''
-    Writes Kpath from CONTCAR in linemode according to unit cell type
-    '''
-    struct: Structure = Structure.from_file(CONTCAR)
-    kpath = HighSymmKpath(struct)
-    kpts = Kpoints.automatic_linemode(divisions=40,ibz=kpath)
-    kpts.write_file("KPOINTS_nsc")
-
-def writeKpoints(slab: Slab, density: list=[50,50,50], save=True): 
-    '''Writes KPOINT file to current directory
-    
-       Kpoints are assigned by length [x,y,z]/[a,b,c]
-    '''
-
-    kpts = Kpoints.automatic_density_by_lengths(slab.structure, density, force_gamma=True)
-    kpoints = kpts.as_dict()['kpoints'][0]
-    if save:
-        kpts.write_file("KPOINTS")
-
-    return f"{int(kpoints[0])}x{int(kpoints[1])}x{int(kpoints[2])}"
 
 def prepareSlabs(contcars: list[str], indices: list[tuple], min_slab: int=2, min_vac: int=2):
     '''
@@ -139,8 +124,26 @@ def metaData(slab_list: list[Slab], filename: str="metadata", wKPOINTS: bool=Fal
             meta.write(f"{slab.formula},{slab.plane},{slab.a:10.5f},{slab.b:10.5f},{slab.c:10.5f},{(kpoints or '')},\n")
 
 
-def writePOTCAR(slab, potential_dir: str):
-    import os
-    atoms = slab.structure.symbol_set
-    dir_strings = [f"{potential_dir}/PBE/{atom}" for atom in [str(atom) for atom in atoms]] 
+def writeKpath(CONTCAR: str):
+    '''
+    Writes Kpath from CONTCAR in linemode according to unit cell type
+    '''
+    struct: Structure = Structure.from_file(CONTCAR)
+    kpath = HighSymmKpath(struct)
+    kpts = Kpoints.automatic_linemode(divisions=40,ibz=kpath)
+    kpts.write_file("KPOINTS_nsc")
+
+def writeKpoints(slab: Slab, density: list=[50,50,50], save=True): 
+    '''Writes KPOINT file to current directory
+    
+       Kpoints are assigned by length [x,y,z]/[a,b,c]
+    '''
+
+    kpts = Kpoints.automatic_density_by_lengths(slab.structure, density, force_gamma=True)
+    kpoints = kpts.as_dict()['kpoints'][0]
+    if save:
+        kpts.write_file(f"{slab.formula}_{slab.plane}.kpoints")
+
+    return f"{int(kpoints[0])}x{int(kpoints[1])}x{int(kpoints[2])}"
+
 
