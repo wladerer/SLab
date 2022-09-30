@@ -6,6 +6,7 @@ from pymatgen.symmetry.bandstructure import HighSymmKpath
 from pymatgen.analysis.adsorption import plot_slab
 from pymatgen.analysis.adsorption import AdsorbateSiteFinder
 from matplotlib import pyplot as plt
+import numpy as np
 
 
 class Bulk:
@@ -37,14 +38,27 @@ class Slab(Bulk):
         self.a: float = valid_slab.as_dict()['lattice']['a']
         self.b: float = valid_slab.as_dict()['lattice']['b']
         self.c: float = valid_slab.as_dict()['lattice']['c']
+
+    def longestAxis(self):
+        lattice_params: list[str] = ["a", "b", "c"]
+        axis: float = np.argmax([self.a, self.b, self.c])
+        longest_axis: str = lattice_params[axis]
+
+        return longest_axis
     
     def __str__(self):
         return str(self.structure)
 
-    def saveSlab(self):
+    def saveSlab(self, freeze: bool = False):
 
-        POSCAR = Poscar(self.structure, sort_structure=True)
-        POSCAR.write_file(self.filename)
+        if freeze:
+            POSCAR = Poscar(self.structure, sort_structure=True)
+            POSCAR.selective_dynamics = freezeArray(self)
+            POSCAR.write_file(self.filename)
+        
+        else:
+            POSCAR = Poscar(self.structure, sort_structure=True)
+            POSCAR.write_file(self.filename)
         
     def addH(self, plot=False):
 
@@ -146,4 +160,24 @@ def writeKpoints(slab: Slab, density: list=[50,50,50], save=True):
 
     return f"{int(kpoints[0])}x{int(kpoints[1])}x{int(kpoints[2])}"
 
+def findLowestAtoms(slab: Slab, depth):
+    df = slab.structure.as_dataframe()
+    frac2cart = {"a":"x","b":"y","c":"z"}
+    longest_cartesian  = frac2cart[slab.longestAxis()]
+    rows: list[float] = df.index[df[longest_cartesian] <= depth]
+    natoms = len(df.index)
 
+    return rows, natoms
+
+def freezeArray(slab: Slab, depth=3):
+    rows_to_freeze, natoms = findLowestAtoms(slab, depth)
+    mobile = [True, True, True]
+    freeze = [False, False, False]
+    selective_dynamics = []
+    for j in range(natoms):
+        if j in rows_to_freeze:
+            selective_dynamics.append(freeze)
+        else:
+            selective_dynamics.append(mobile)
+    
+    return selective_dynamics
