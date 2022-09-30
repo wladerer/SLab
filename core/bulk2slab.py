@@ -169,7 +169,7 @@ def findLowestAtoms(slab: Slab, depth):
 
     return rows, natoms
 
-def freezeArray(slab: Slab, depth=3):
+def freezeArray(slab: Slab, depth=5):
     rows_to_freeze, natoms = findLowestAtoms(slab, depth)
     mobile = [True, True, True]
     freeze = [False, False, False]

@@ -6,7 +6,7 @@ Bi2Se3_contcar = "/home/wladerer/github/SLab/test/BULK_CONTCARS/Bi2Se3_CONTCAR.v
 Bi2Te3_contcar = "/home/wladerer/github/SLab/test/BULK_CONTCARS/Bi2Te3_CONTCAR.vasp"
 Sb2Se3_contcar = "/home/wladerer/github/SLab/test/BULK_CONTCARS/Sb2Se3_CONTCAR.vasp"
 Sb2Te3_contcar = "/home/wladerer/github/SLab/test/BULK_CONTCARS/Sb2Te3_CONTCAR.vasp"
-contcars = [Bi2Se3_contcar, Bi2Te3_contcar, Sb2Te3_contcar, Sb2Se3_contcar]
+contcars = [Bi2Se3_contcar, Bi2Te3_contcar, Sb2Te3_contcar]
 
 for contcar in contcars:
     writePOTCAR(contcar, "/app/vaspapp/Potentials/PBE")
@@ -20,5 +20,5 @@ for slab in sb_slabs:
     all_others.append(slab)
 
 for slab in all_others:
-    slab.saveSlab()
+    slab.saveSlab(freeze=True)
     writeKpoints(slab)
