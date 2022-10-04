@@ -32,7 +32,8 @@ class Slab(Bulk):
         self.getParams(valid_slab)
         self.plane = f"{str(index[0]) + str(index[1]) + str(index[2])}"
         self.filename: str = f"{self.formula}_{self.plane}_POSCAR.vasp"
-
+    
+    
     def getParams(self, valid_slab):
         self.length: float = valid_slab.as_dict()['lattice']['c']
         self.a: float = valid_slab.as_dict()['lattice']['a']
@@ -60,6 +61,25 @@ class Slab(Bulk):
             POSCAR = Poscar(self.structure, sort_structure=True)
             POSCAR.write_file(self.filename)
         
+
+class adSlab(Bulk):
+
+    def __init__(self, CONTCAR: str):
+        super().__init__(CONTCAR)
+        self.a: float = self.structure.as_dict()['lattice']['a']
+        self.b: float = self.structure.as_dict()['lattice']['b']
+        self.c: float = self.structure.as_dict()['lattice']['c']
+
+    def longestAxis(self):
+        lattice_params: list[str] = ["a", "b", "c"]
+        axis: float = np.argmax([self.a, self.b, self.c])
+        longest_axis: str = lattice_params[axis]
+
+        return longest_axis
+    
+    def __str__(self):
+        return str(self.structure)
+
     def addH(self, plot=False):
 
         adsorbate = Molecule("H", [[0,0,0]])
@@ -75,7 +95,6 @@ class Slab(Bulk):
                 self.configPlot(n, ax)
             plt.show()
 
-    
         return ads_structs
 
     def configPlot(self, n, ax):
@@ -84,6 +103,18 @@ class Slab(Bulk):
         ax.set_yticks([])
         ax.set_xlim(-5, 5)
         ax.set_ylim(-5,5)
+    
+    def saveSlab(self, freeze: bool = False, selective_dynamics=None):
+
+        if freeze:
+            POSCAR = Poscar(self.structure, sort_structure=True)
+            POSCAR.selective_dynamics = selective_dynamics
+            POSCAR.write_file()
+        
+        else:
+            POSCAR = Poscar(self.structure, sort_structure=True)
+            POSCAR.write_file()
+    
 
 def bulk2slab(bulk, index: tuple, MIN_SLAB: int, MIN_VAC: int):
         '''
@@ -160,7 +191,7 @@ def writeKpoints(slab: Slab, density: list=[50,50,50], save=True):
 
     return f"{int(kpoints[0])}x{int(kpoints[1])}x{int(kpoints[2])}"
 
-def findLowestAtoms(slab: Slab, depth):
+def findLowestAtoms(slab, depth):
     df = slab.structure.as_dataframe()
     frac2cart = {"a":"x","b":"y","c":"z"}
     longest_cartesian  = frac2cart[slab.longestAxis()]
@@ -169,7 +200,7 @@ def findLowestAtoms(slab: Slab, depth):
 
     return rows, natoms
 
-def freezeArray(slab: Slab, depth=5):
+def freezeArray(slab, depth=5):
     rows_to_freeze, natoms = findLowestAtoms(slab, depth)
     mobile = [True, True, True]
     freeze = [False, False, False]
