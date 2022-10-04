@@ -1,0 +1,25 @@
+SYSTEM = Tetradymite Slab
+
+# starting parameters
+ISTART =    0          # 0-new  1- orbitals from WAVECAR
+ICHARG =    2          # charge: 1-file 2-atom 10-const
+
+ISIF =    2   # determines which principal degrees-of-freedom are allowed to change
+
+# electronic optimization settings
+ENCUT =    300         # defaults from POTCAR, but wise to include
+ALGO  =    FAST        # alorithm for electron optimization, can be also Normal or ALL
+NELM  =    80          # sets the maximum number of electronic SC (self-consistency) steps
+EDIFF =    1E-06       # stopping-criterion for ELM
+PREC  =    Accurate    # specifies the "precision"-mode. 
+
+# ionic relaxation parameters
+EDIFFG =    -1E-02     # stopping-criterion for IOM (all forces smaller 1E-2)
+NSW    =    20         # number of steps for IOM
+IBRION =    2          # CG for ions, often 1 (RMM-DISS) is faster
+
+
+#performance optimization parameters
+NCORE =    4           # number of cores dedicated to each orbital
+
+LORBIT =    11   # write DOSCAR and lm-decomposed PROCAR

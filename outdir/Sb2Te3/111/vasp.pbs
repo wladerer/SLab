@@ -1,0 +1,18 @@
+#!/bin/bash
+#PBS -q standard
+#PBS -l select=4:ncpus=128
+#PBS -l walltime=5:00:00
+#PBS -N Sb2Te3_111
+#PBS -j oe
+#PBS -l job_type=MPI
+#PBS -M wtladerer@gmail.com
+#PBS -m be
+#PBS -A AFOSR35083MAV
+
+module load VASP
+
+export VASP_NPROCS=512
+ 
+cd $PBS_O_WORKDIR
+
+vasp
