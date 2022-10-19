@@ -38,22 +38,19 @@ class Bulk:
         ads_structs = asf.generate_adsorption_structures(adsorbate, repeat=[1,1,1],find_args={"distance":1.6})
         
         if plot ==True:
-
-            fig = plt.figure(figsize=[15,60])
-            for n, ads_struct in enumerate(ads_structs):
-                ax = fig.add_subplot(1,len(ads_structs),n+1)
-                plot_slab(ads_struct, ax, adsorption_sites=False)
-                self.configPlot(n, ax)
+            
+            # Plot all adsorption sites such that they are arranged in a grid using subplot2grid function
+            fig = plt.figure(figsize=(300, 200))
+            n = len(ads_structs)
+            for i, ads_struct in enumerate(ads_structs):
+                ax = plt.subplot2grid((int(np.ceil(n/2)), 2), (i//2, i%2), fig=fig)
+                plot_slab(ads_struct, ax=ax, adsorption_sites=True)
+                ax.set_title("Adsorption site {}".format(i+1))
+            plt.tight_layout()
             plt.show()
 
-        return ads_structs
-        
-    def configPlot(self, n, ax):
-        ax.set_title(n+1)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_xlim(-5, 5)
-        ax.set_ylim(-5,5)
+
+
 
 class Slab(Bulk):
 
