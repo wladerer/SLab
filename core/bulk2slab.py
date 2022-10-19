@@ -15,6 +15,14 @@ class Bulk:
             self.CONTCAR = CONTCAR
             self.structure: Structure = Structure.from_file(CONTCAR)
             self.formula = self.getreducedFormula()
+            self.getParams(self.structure)
+
+    def getParams(self, valid_slab):
+        self.length: float = valid_slab.as_dict()['lattice']['c']
+        self.a: float = valid_slab.as_dict()['lattice']['a']
+        self.b: float = valid_slab.as_dict()['lattice']['b']
+        self.c: float = valid_slab.as_dict()['lattice']['c']
+
 
     def getreducedFormula(self):
         '''Pymatgen does not have a simple way of getting a reduced formula from a Structure object'''
@@ -22,12 +30,35 @@ class Bulk:
         reduced_formula, factor = Composition(molecular_formula).get_reduced_formula_and_factor()            
 
         return reduced_formula
+
+    def addH(self, plot=False):
+
+        adsorbate = Molecule("H", [[0,0,0]])
+        asf = AdsorbateSiteFinder(self.structure)
+        ads_structs = asf.generate_adsorption_structures(adsorbate, repeat=[1,1,1],find_args={"distance":1.6})
         
+        if plot ==True:
+
+            fig = plt.figure(figsize=[15,60])
+            for n, ads_struct in enumerate(ads_structs):
+                ax = fig.add_subplot(1,len(ads_structs),n+1)
+                plot_slab(ads_struct, ax, adsorption_sites=False)
+                self.configPlot(n, ax)
+            plt.show()
+
+        return ads_structs
+        
+    def configPlot(self, n, ax):
+        ax.set_title(n+1)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlim(-5, 5)
+        ax.set_ylim(-5,5)
 
 class Slab(Bulk):
 
-    def __init__(self, valid_slab, CONTCAR: str, index: tuple, MIN_SLAB: int, MIN_VAC: int):
-        super().__init__(CONTCAR)
+    def __init__(self, valid_slab, index: tuple, MIN_SLAB: int, MIN_VAC: int):
+        super().__init__(valid_slab)
         self.structure: Structure = valid_slab
         self.getParams(valid_slab)
         self.plane = f"{str(index[0]) + str(index[1]) + str(index[2])}"
@@ -49,6 +80,23 @@ class Slab(Bulk):
     
     def __str__(self):
         return str(self.structure)
+
+    def addH(self, plot=False):
+
+        adsorbate = Molecule("H", [[0,0,0]])
+        asf = AdsorbateSiteFinder(self.structure)
+        ads_structs = asf.generate_adsorption_structures(adsorbate, repeat=[1,1,1],find_args={"distance":1.6})
+        
+        if plot ==True:
+
+            fig = plt.figure(figsize=[15,60])
+            for n, ads_struct in enumerate(ads_structs):
+                ax = fig.add_subplot(1,len(ads_structs),n+1)
+                plot_slab(ads_struct, ax, adsorption_sites=False)
+                self.configPlot(n, ax)
+            plt.show()
+
+        return ads_structs
 
     def saveSlab(self, freeze: bool = False):
 
