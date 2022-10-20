@@ -35,20 +35,36 @@ class Bulk:
 
         adsorbate = Molecule("H", [[0,0,0]])
         asf = AdsorbateSiteFinder(self.structure)
-        ads_structs = asf.generate_adsorption_structures(adsorbate, repeat=[1,1,1],find_args={"distance":1.6})
+        # ads_structs = asf.generate_adsorption_structures(adsorbate, repeat=[1,1,1],find_args={"distance":1.6})
         
+
+
         if plot ==True:
             
             # Plot all adsorption sites such that they are arranged in a grid using subplot2grid function
-            fig = plt.figure(figsize=(300, 200))
-            n = len(ads_structs)
-            for i, ads_struct in enumerate(ads_structs):
-                ax = plt.subplot2grid((int(np.ceil(n/2)), 2), (i//2, i%2), fig=fig)
-                plot_slab(ads_struct, ax=ax, adsorption_sites=True)
-                ax.set_title("Adsorption site {}".format(i+1))
-            plt.tight_layout()
-            plt.show()
+            fig = plt.figure(figsize=(20,20))   
+            nrows = ncols = int(np.ceil(np.sqrt(len(ads_structs))))
+            for n, ads_struct in enumerate(ads_structs):
+                ax = fig.add_subplot(nrows, ncols, n+1)
+                plot_slab(ads_struct, ax=ax, adsorption_sites=False, decay=0.5, scale=0.5)
+                ax.set_title("Site {}".format(n+1))
+                ax.set_xlim(2.5, 8.5)
+                ax.set_ylim(2.5, 8.5)
 
+            
+            plt.show()
+        
+        return ads_structs
+    
+    def plot(self):
+        # plot the slab in a 2D image with pymatgen's plot_slab function
+        fig = plt.figure(figsize=(20,20))
+        ax = fig.gca()
+        plot_slab(self.structure, ax=ax, decay=0.5, scale=1.0)
+        ax.set_xlim(2*2.5, 8.5)
+        ax.set_ylim(2*2.5, 2*8.5)
+
+        plt.show()
 
 
 
@@ -105,6 +121,10 @@ class Slab(Bulk):
         else:
             POSCAR = Poscar(self.structure, sort_structure=True)
             POSCAR.write_file(self.filename)
+    
+    def plot(self):
+        plot_slab(self.structure, adsorption_sites=True, decay=0.5, scale=0.5)
+        plt.show()
         
 
 class adSlab(Bulk):
